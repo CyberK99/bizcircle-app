@@ -1,25 +1,40 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import 'react-native-reanimated';
+import { AuthProvider, useAuth } from '@src/providers/AuthProvider';
+import { QueryProvider } from '@src/providers/QueryProvider';
+import { LoadingScreen } from '@src/components/ui/LoadingScreen';
 
-import { useColorScheme } from '@/components/useColorScheme';
+export { ErrorBoundary } from 'expo-router';
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
-
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
-};
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading, hasCompletedOnboarding } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inAuthGroup = segments[0] === 'auth';
+    const inOnboarding = segments[0] === 'onboarding';
+
+    if (!isAuthenticated && !inAuthGroup) {
+      router.replace('/auth/login');
+    } else if (isAuthenticated && !hasCompletedOnboarding && !inOnboarding) {
+      router.replace('/onboarding/');
+    } else if (isAuthenticated && hasCompletedOnboarding && (inAuthGroup || inOnboarding)) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, isLoading, hasCompletedOnboarding, segments]);
+
+  if (isLoading) return <LoadingScreen />;
+
+  return <>{children}</>;
+}
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -27,33 +42,51 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
   }, [error]);
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
+    if (loaded) SplashScreen.hideAsync();
   }, [loaded]);
 
-  if (!loaded) {
-    return null;
-  }
-
-  return <RootLayoutNav />;
-}
-
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  if (!loaded) return null;
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
+    <QueryProvider>
+      <AuthProvider>
+        <AuthGate>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="auth" />
+            <Stack.Screen name="onboarding" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen
+              name="group/[id]"
+              options={{ headerShown: true, title: 'Group' }}
+            />
+            <Stack.Screen
+              name="group/post/[id]"
+              options={{ headerShown: true, title: 'Post' }}
+            />
+            <Stack.Screen
+              name="emergency/new"
+              options={{ headerShown: true, title: 'New Emergency', presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="emergency/[id]"
+              options={{ headerShown: true, title: 'Emergency Request' }}
+            />
+            <Stack.Screen
+              name="messages"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="business/[id]"
+              options={{ headerShown: true, title: 'Business Profile' }}
+            />
+          </Stack>
+        </AuthGate>
+      </AuthProvider>
+    </QueryProvider>
   );
 }
