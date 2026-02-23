@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from '@src/components/ui/Avatar';
@@ -13,6 +13,85 @@ interface PostCardProps {
   showGroup?: boolean;
   onLike?: () => void;
 }
+
+function PhotoGrid({ urls }: { urls: string[] }) {
+  const count = urls.length;
+
+  if (count === 1) {
+    return (
+      <View style={photoStyles.container}>
+        <Image source={{ uri: urls[0] }} style={photoStyles.single} />
+      </View>
+    );
+  }
+
+  if (count === 2) {
+    return (
+      <View style={photoStyles.container}>
+        <View style={photoStyles.row}>
+          <Image source={{ uri: urls[0] }} style={photoStyles.half} />
+          <Image source={{ uri: urls[1] }} style={photoStyles.half} />
+        </View>
+      </View>
+    );
+  }
+
+  if (count === 3) {
+    return (
+      <View style={photoStyles.container}>
+        <Image source={{ uri: urls[0] }} style={photoStyles.topFull} />
+        <View style={photoStyles.row}>
+          <Image source={{ uri: urls[1] }} style={photoStyles.half} />
+          <Image source={{ uri: urls[2] }} style={photoStyles.half} />
+        </View>
+      </View>
+    );
+  }
+
+  // 4 photos: 2x2 grid
+  return (
+    <View style={photoStyles.container}>
+      <View style={photoStyles.row}>
+        <Image source={{ uri: urls[0] }} style={photoStyles.quarter} />
+        <Image source={{ uri: urls[1] }} style={photoStyles.quarter} />
+      </View>
+      <View style={photoStyles.row}>
+        <Image source={{ uri: urls[2] }} style={photoStyles.quarter} />
+        <Image source={{ uri: urls[3] }} style={photoStyles.quarter} />
+      </View>
+    </View>
+  );
+}
+
+const photoStyles = StyleSheet.create({
+  container: {
+    marginTop: 10,
+    borderRadius: 10,
+    overflow: 'hidden',
+    gap: 2,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  single: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    borderRadius: 10,
+  },
+  topFull: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+  },
+  half: {
+    flex: 1,
+    aspectRatio: 1,
+  },
+  quarter: {
+    flex: 1,
+    aspectRatio: 1,
+  },
+});
 
 export function PostCard({ post, showGroup = false, onLike }: PostCardProps) {
   const router = useRouter();
@@ -59,6 +138,10 @@ export function PostCard({ post, showGroup = false, onLike }: PostCardProps) {
 
       {post.title && <Text style={styles.title}>{post.title}</Text>}
       <Text style={styles.body}>{truncate(post.body, 200)}</Text>
+
+      {post.media_urls && post.media_urls.length > 0 && (
+        <PhotoGrid urls={post.media_urls} />
+      )}
 
       {post.is_pinned && (
         <View style={styles.pinnedBadge}>

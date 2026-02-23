@@ -13,6 +13,18 @@ export async function pickImage(): Promise<string | null> {
   return result.assets[0].uri;
 }
 
+export async function pickMultipleImages(limit: number = 4): Promise<string[]> {
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images'],
+    allowsMultipleSelection: true,
+    selectionLimit: limit,
+    quality: 0.8,
+  });
+
+  if (result.canceled || !result.assets) return [];
+  return result.assets.map((asset) => asset.uri);
+}
+
 export async function uploadImage(
   bucket: string,
   path: string,
