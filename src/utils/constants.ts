@@ -54,6 +54,25 @@ export const LISTING_TYPE_LABELS: Record<string, string> = {
   group_deal: 'Group Deal',
 };
 
+export const LISTING_TYPE_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
+  equipment: { label: 'Equipment', icon: 'construct', color: '#6366f1' },
+  supply: { label: 'Supplies', icon: 'cube', color: '#8b5cf6' },
+  space: { label: 'Space', icon: 'business', color: '#0891b2' },
+  staff_available: { label: 'Staff Available', icon: 'person', color: '#16a34a' },
+  staff_needed: { label: 'Staff Needed', icon: 'people', color: '#ea580c' },
+  group_deal: { label: 'Group Deal', icon: 'pricetags', color: '#dc2626' },
+};
+
+export const PRICE_TYPE_LABELS: Record<string, string> = {
+  fixed: 'Fixed Price',
+  negotiable: 'Negotiable',
+  free: 'Free',
+  per_hour: 'Per Hour',
+  per_day: 'Per Day',
+};
+
+export const CONDITION_OPTIONS = ['New', 'Like New', 'Good', 'Fair', 'For Parts'] as const;
+
 export const POST_TYPE_LABELS: Record<string, string> = {
   discussion: 'Discussion',
   question: 'Question',

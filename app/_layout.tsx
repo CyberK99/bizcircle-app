@@ -77,6 +77,14 @@ export default function RootLayout() {
               options={{ headerShown: true, title: 'Emergency Request' }}
             />
             <Stack.Screen
+              name="marketplace/new"
+              options={{ headerShown: true, title: 'New Listing', presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="marketplace/[id]"
+              options={{ headerShown: true, title: 'Listing' }}
+            />
+            <Stack.Screen
               name="messages"
               options={{ headerShown: false }}
             />
