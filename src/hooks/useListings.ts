@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@src/lib/supabase';
 import { useAuth } from '@src/providers/AuthProvider';
@@ -104,6 +105,17 @@ export function useGroupListings(filters?: ListingFilters) {
 }
 
 export function useListing(id: string) {
+  const { business } = useAuth();
+  const viewTracked = useRef(false);
+
+  // Increment view count once per session
+  useEffect(() => {
+    if (id && !viewTracked.current) {
+      viewTracked.current = true;
+      supabase.rpc('increment_listing_views', { p_listing_id: id });
+    }
+  }, [id]);
+
   return useQuery({
     queryKey: ['listing', id],
     queryFn: async () => {
@@ -117,7 +129,22 @@ export function useListing(id: string) {
         .single();
 
       if (error) throw error;
-      return data as Listing;
+
+      const listing = data as Listing;
+
+      // Check if current user has saved this listing
+      if (business) {
+        const { data: saveData } = await supabase
+          .from('listing_saves')
+          .select('listing_id')
+          .eq('listing_id', id)
+          .eq('business_id', business.id)
+          .maybeSingle();
+
+        listing.is_saved = !!saveData;
+      }
+
+      return listing;
     },
     enabled: !!id,
     refetchInterval: 10000,
@@ -208,6 +235,36 @@ export function useUpdateListingStatus() {
       queryClient.invalidateQueries({
         queryKey: ['listing', variables.listingId],
       });
+      queryClient.invalidateQueries({ queryKey: ['listings-nearby'] });
+      queryClient.invalidateQueries({ queryKey: ['listings-groups'] });
+    },
+  });
+}
+
+export function useToggleListingSave(listingId: string) {
+  const queryClient = useQueryClient();
+  const { business } = useAuth();
+
+  return useMutation({
+    mutationFn: async (isSaved: boolean) => {
+      if (!business) throw new Error('No business profile');
+
+      if (isSaved) {
+        const { error } = await supabase
+          .from('listing_saves')
+          .delete()
+          .eq('listing_id', listingId)
+          .eq('business_id', business.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('listing_saves')
+          .insert({ listing_id: listingId, business_id: business.id });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listing', listingId] });
       queryClient.invalidateQueries({ queryKey: ['listings-nearby'] });
       queryClient.invalidateQueries({ queryKey: ['listings-groups'] });
     },

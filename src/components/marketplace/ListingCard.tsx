@@ -108,7 +108,17 @@ export function ListingCard({ listing }: ListingCardProps) {
               {business?.name || 'Unknown'}
             </Text>
           </View>
-          <Text style={styles.time}>{timeAgo(listing.created_at)}</Text>
+          <View style={styles.stats}>
+            <View style={styles.stat}>
+              <Ionicons name="eye-outline" size={14} color={COLORS.textMuted} />
+              <Text style={styles.statText}>{listing.view_count || 0}</Text>
+            </View>
+            <View style={styles.stat}>
+              <Ionicons name="bookmark-outline" size={14} color={COLORS.textMuted} />
+              <Text style={styles.statText}>{listing.save_count || 0}</Text>
+            </View>
+            <Text style={styles.time}>{timeAgo(listing.created_at)}</Text>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -194,9 +204,22 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     flex: 1,
   },
+  stats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  stat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  statText: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+  },
   time: {
     fontSize: 12,
     color: COLORS.textMuted,
-    marginLeft: 8,
   },
 });

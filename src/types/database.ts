@@ -216,11 +216,14 @@ export interface Listing {
   deal_deadline: string | null;
   supplier_name: string | null;
   status: ListingStatus;
+  view_count: number;
+  save_count: number;
   expires_at: string | null;
   created_at: string;
   updated_at: string;
   // Joined fields
   business?: Business;
+  is_saved?: boolean;
 }
 
 export interface VerificationSubmission {

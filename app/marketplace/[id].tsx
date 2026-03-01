@@ -12,7 +12,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@src/providers/AuthProvider';
-import { useListing, useUpdateListingStatus } from '@src/hooks/useListings';
+import { useListing, useUpdateListingStatus, useToggleListingSave } from '@src/hooks/useListings';
 import { useStartConversation } from '@src/hooks/useMessages';
 import { Avatar } from '@src/components/ui/Avatar';
 import { Badge } from '@src/components/ui/Badge';
@@ -36,6 +36,7 @@ export default function ListingDetailScreen() {
   const { data: listing, isLoading } = useListing(id);
   const updateStatus = useUpdateListingStatus();
   const startConversation = useStartConversation();
+  const toggleSave = useToggleListingSave(id);
 
   if (isLoading || !listing) return <LoadingScreen />;
 
@@ -267,11 +268,17 @@ export default function ListingDetailScreen() {
           <Text style={styles.description}>{listing.description}</Text>
         )}
 
-        {/* Posted time */}
-        <Text style={styles.postedTime}>
-          Posted {timeAgo(listing.created_at)}
-          {listing.expires_at && ` · Expires ${formatDate(listing.expires_at)}`}
-        </Text>
+        {/* Posted time & view count */}
+        <View style={styles.metaRow}>
+          <Text style={styles.postedTime}>
+            Posted {timeAgo(listing.created_at)}
+            {listing.expires_at && ` · Expires ${formatDate(listing.expires_at)}`}
+          </Text>
+          <View style={styles.viewCount}>
+            <Ionicons name="eye-outline" size={14} color={COLORS.textMuted} />
+            <Text style={styles.viewCountText}>{listing.view_count || 0}</Text>
+          </View>
+        </View>
       </Card>
 
       {/* Type-specific details */}
@@ -310,13 +317,29 @@ export default function ListingDetailScreen() {
 
       {/* Actions */}
       {!isOwner && listing.status === 'active' && (
-        <Button
-          title="Contact Seller"
-          onPress={handleContactSeller}
-          loading={startConversation.isPending}
-          icon={<Ionicons name="chatbubble" size={20} color="#fff" />}
-          style={{ marginTop: 8 }}
-        />
+        <View style={styles.buyerActions}>
+          <Button
+            title="Contact Seller"
+            onPress={handleContactSeller}
+            loading={startConversation.isPending}
+            icon={<Ionicons name="chatbubble" size={20} color="#fff" />}
+            style={{ flex: 1 }}
+          />
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={() => toggleSave.mutate(!!listing.is_saved)}
+            disabled={toggleSave.isPending}
+          >
+            <Ionicons
+              name={listing.is_saved ? 'bookmark' : 'bookmark-outline'}
+              size={24}
+              color={listing.is_saved ? COLORS.primary : COLORS.textSecondary}
+            />
+            <Text style={[styles.saveButtonText, listing.is_saved && { color: COLORS.primary }]}>
+              {listing.save_count || 0}
+            </Text>
+          </TouchableOpacity>
+        </View>
       )}
 
       {isOwner && listing.status === 'active' && (
@@ -400,7 +423,23 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 12,
   },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   postedTime: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    flex: 1,
+  },
+  viewCount: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginLeft: 8,
+  },
+  viewCountText: {
     fontSize: 13,
     color: COLORS.textMuted,
   },
@@ -479,6 +518,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textMuted,
     marginTop: 2,
+  },
+  buyerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 8,
+  },
+  saveButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    backgroundColor: '#fff',
+  },
+  saveButtonText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+    fontWeight: '600',
   },
   ownerActions: {
     marginTop: 16,
